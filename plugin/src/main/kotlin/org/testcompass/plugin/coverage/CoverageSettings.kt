@@ -1,0 +1,33 @@
+package org.testcompass.plugin.coverage
+
+import com.intellij.openapi.components.PersistentStateComponent
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.State
+import com.intellij.openapi.components.Storage
+
+@State(
+    name = "TestCompassSettings",
+    storages = [Storage("testcompass.xml")]
+)
+@Service(Service.Level.APP)
+class CoverageSettings : PersistentStateComponent<CoverageSettings.State> {
+    data class State(
+        var amplifyBearer: String = ""
+    )
+
+    private var state = State()
+
+    override fun getState(): State = state
+
+    override fun loadState(state: State) {
+        this.state = state
+    }
+
+    fun getBearerToken(): String = AmplifyToken.normalize(state.amplifyBearer)
+
+    fun setBearerToken(token: String) {
+        state.amplifyBearer = AmplifyToken.normalize(token)
+    }
+
+    fun isConfigured(): Boolean = getBearerToken().isNotBlank()
+}

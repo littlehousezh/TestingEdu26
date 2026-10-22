@@ -1,0 +1,527 @@
+package org.testcompass.plugin.coverage
+
+import org.testcompass.plugin.actions.MethodHit
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.roots.ProjectFileIndex
+import com.intellij.psi.JavaPsiFacade
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiDocumentManager
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiJavaCodeReferenceElement
+import com.intellij.psi.PsiManager
+import com.intellij.psi.search.FilenameIndex
+import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.util.PsiTreeUtil
+import kotlin.math.min
+
+data class ProductionSourceBundle(
+    val classFqn: String,
+    val sourceFilePath: String?,
+    val sourceText: String
+)
+
+data class MethodBundle(
+    val classFqn: String,
+    val methodName: String,
+    val methodText: String,
+    val sourceFilePath: String?,
+    val startLine: Int?,
+    val endLine: Int?,
+    val productionSources: List<ProductionSourceBundle>
+)
+
+data class MethodCoverageBundle(
+    val hit: MethodHit,
+    val method: MethodBundle
+)
+
+data class TestFileBundle(
+    val testFilePath: String?, val testFileText: String?
+)
+
+object CodeExtraction {
+
+    fun resolveTopBundles(project: Project, hits: List<MethodHit>): List<MethodCoverageBundle> {
+        return hits.mapNotNull { hit ->
+            resolveMethodBundle(project, hit.classFqn, hit.method)?.let { MethodCoverageBundle(hit, it) }
+        }
+    }
+
+    /**
+     * Resolve the most relevant student test files for the whole prompt.
+     *
+     * Some assignments split tests across multiple files. We include a small ranked set so
+     * recommendations can avoid duplicating behavior that is covered outside the single
+     * best-named test file. In one-test-file projects, this still returns just that file.
+     */
+    fun resolveRelevantTestFiles(project: Project, bundles: List<MethodCoverageBundle>): List<TestFileBundle> {
+        val classNames = bundles.mapNotNull { simpleClassName(it.method.classFqn) }.toSet()
+        val methodNames = bundles.map { it.method.methodName }.toSet()
+        return findRelevantTestFiles(project, classNames, methodNames)
+            .take(CoverageAIConfig.MAX_TEST_FILES_TO_INCLUDE)
+            .map {
+                TestFileBundle(
+                    testFilePath = it.virtualFile?.path,
+                    testFileText = it.text.take(CoverageAIConfig.MAX_TEST_FILE_CHARS)
+                )
+            }
+    }
+
+    private fun resolveMethodBundle(project: Project, classFqn: String, methodKey: String): MethodBundle? {
+        val psiFacade = JavaPsiFacade.getInstance(project)
+        val scope = GlobalSearchScope.projectScope(project)
+
+        val psiClass: PsiClass =
+            (psiFacade.findClass(classFqn, scope) ?: psiFacade.findClass(classFqn.replace('$', '.'), scope))
+                ?: return null
+
+        // ---------- name + descriptor parsing ----------
+        val classSimple = psiClass.name
+        val parsedName = simpleMethodNameFrom(methodKey, classSimple)
+        val targetParamCount = jvmParamCountFromKey(methodKey)
+        val isCtor = parsedName == "<init>"
+
+        // ---------- choose the PsiMethod ----------
+        val chosen = if (isCtor) {
+            val ctors = psiClass.constructors
+            when {
+                ctors.isEmpty() -> null
+                targetParamCount != null -> ctors.firstOrNull { it.parameterList.parametersCount == targetParamCount }
+                    ?: ctors.maxByOrNull { it.textLength }
+
+                else -> ctors.maxByOrNull { it.textLength }
+            }
+        } else {
+            val byName = psiClass.findMethodsByName(parsedName, /*checkBases=*/false).toList()
+            when {
+                byName.isEmpty() -> null
+                targetParamCount != null -> byName.firstOrNull { it.parameterList.parametersCount == targetParamCount }
+                    ?: byName.maxByOrNull { it.textLength }
+
+                else -> byName.maxByOrNull { it.textLength }
+            }
+        } ?: return null
+
+        val methodText = chosen.text.take(CoverageAIConfig.MAX_METHOD_CHARS)
+        val document = PsiDocumentManager.getInstance(project).getDocument(chosen.containingFile)
+        val startLine = document?.getLineNumber(chosen.textRange.startOffset)?.plus(1)
+        val endLine = document?.getLineNumber(chosen.textRange.endOffset)?.plus(1)
+        return MethodBundle(
+            classFqn = classFqn,
+            methodName = if (isCtor) "<init>" else parsedName,
+            methodText = methodText,
+            sourceFilePath = chosen.containingFile?.virtualFile?.path,
+            startLine = startLine,
+            endLine = endLine,
+            productionSources = resolveProductionSources(project, psiClass)
+        )
+    }
+
+    /**
+     * Include the complete source file containing the hotspot and the complete source
+     * files of directly referenced project classes. This gives the recommendation model
+     * callers, field state, indexing logic, and small domain collaborators such as Frame.
+     */
+    private fun resolveProductionSources(project: Project, psiClass: PsiClass): List<ProductionSourceBundle> {
+        val index = ProjectFileIndex.getInstance(project)
+        val primaryFile = psiClass.containingFile
+        val referencedClasses = PsiTreeUtil.findChildrenOfType(
+            psiClass,
+            PsiJavaCodeReferenceElement::class.java
+        ).asSequence()
+            .mapNotNull { it.resolve() as? PsiClass }
+            .filter { referenced ->
+                val file = referenced.containingFile?.virtualFile
+                file != null && index.isInContent(file) && !index.isInTestSourceContent(file)
+            }
+            .sortedBy { it.qualifiedName.orEmpty() }
+
+        return (sequenceOf(psiClass) + referencedClasses)
+            .mapNotNull { referenced ->
+                val file = referenced.containingFile
+                val virtualFile = file?.virtualFile ?: return@mapNotNull null
+                ProductionSourceBundle(
+                    classFqn = referenced.qualifiedName ?: referenced.name.orEmpty(),
+                    sourceFilePath = virtualFile.path,
+                    sourceText = file.text.take(CoverageAIConfig.MAX_PRODUCTION_FILE_CHARS)
+                )
+            }
+            .distinctBy { it.sourceFilePath ?: it.classFqn }
+            .take(CoverageAIConfig.MAX_PRODUCTION_FILES_TO_INCLUDE)
+            .toList()
+            .ifEmpty {
+                listOfNotNull(primaryFile?.let { file ->
+                    ProductionSourceBundle(
+                        classFqn = psiClass.qualifiedName ?: psiClass.name.orEmpty(),
+                        sourceFilePath = file.virtualFile?.path,
+                        sourceText = file.text.take(CoverageAIConfig.MAX_PRODUCTION_FILE_CHARS)
+                    )
+                })
+            }
+    }
+
+    // ====================== helpers for parsing (unchanged) ======================
+
+    private fun simpleClassName(fqn: String): String? =
+        fqn.substringAfterLast('.', fqn).substringAfterLast('$', fqn.substringAfterLast('.', fqn)).ifBlank { null }
+
+    /**
+     * Derive a simple method name from a table key.
+     */
+    private fun simpleMethodNameFrom(key: String, classSimpleName: String?): String {
+        val trimmed = key.trim()
+        val tail = trimmed.substringAfterLast('.')           // drop package/Class prefix if present
+        val head = tail.substringBefore('(')                 // drop JVM descriptor/sig
+        if (head.endsWith("<init>")) return "<init>"
+        val m = Regex("""([A-Za-z_][$\w]*)\s*$""").find(head)
+        val token = m?.groupValues?.get(1) ?: head.trim()
+        return when {
+            token == "<init>" -> "<init>"
+            classSimpleName != null && token == classSimpleName -> "<init>"
+            else -> token
+        }
+    }
+
+    /**
+     * Parse JVM-style descriptor to a parameter COUNT.
+     */
+    private fun jvmParamCountFromKey(key: String): Int? {
+        val inside =
+            key.substringAfter('(', missingDelimiterValue = "").substringBefore(')', missingDelimiterValue = "")
+        if (inside.isEmpty()) return if (key.contains('(')) 0 else null
+        var i = 0
+        var count = 0
+        while (i < inside.length) {
+            when (inside[i]) {
+                'B', 'C', 'D', 'F', 'I', 'J', 'S', 'Z' -> {
+                    count++; i++
+                }
+
+                '[' -> {
+                    i++
+                }
+
+                'L' -> {
+                    val semi = inside.indexOf(';', i)
+                    if (semi < 0) return count
+                    count++; i = semi + 1
+                }
+
+                else -> i++
+            }
+        }
+        return count
+    }
+
+    /**
+     * Find likely test PsiFiles anywhere in project content.
+     * Preference order:
+     *  1) Exact "<ClassName>Test.(kt|java)" for any of the involved classes
+     *  2) Any *test-ish* file (.kt/.java) whose name mentions a class/method or ends with Spec/IT
+     *  3) Highest-scoring candidates by heuristic
+     */
+    private fun findRelevantTestFiles(
+        project: Project, classNames: Set<String>, methodNames: Set<String>
+    ): List<PsiFile> {
+        val index = ProjectFileIndex.getInstance(project)
+        val scope = GlobalSearchScope.projectScope(project)
+
+        // 1) Prefer exact "ClassNameTest"
+        val exactNames = classNames.flatMap { simple ->
+            listOf("${simple}Test.kt", "${simple}Test.java")
+        }
+        val exactMatches = exactNames.flatMap { nm ->
+            FilenameIndex.getFilesByName(project, nm, scope).mapNotNull { psiFile ->
+                psiFile.takeIf { it.virtualFile?.let(index::isInContent) == true }
+            }
+        }
+
+        // 2) Only inspect test-source files or files whose names identify them as tests.
+        // Reading every production file here made generation slow on larger projects and
+        // could select a production class merely because it mentioned @Test in a comment.
+        val allByExt = FilenameIndex.getAllFilesByExt(project, "kt", scope) + FilenameIndex.getAllFilesByExt(
+            project,
+            "java",
+            scope
+        )
+
+        val candidates = allByExt.asSequence().mapNotNull { vf ->
+                ProgressManager.checkCanceled()
+                if (!index.isInContent(vf)) return@mapNotNull null
+                val name = vf.name.lowercase()
+                val testNamed = name.endsWith("test.kt") || name.endsWith("test.java") ||
+                    name.endsWith("tests.kt") || name.endsWith("tests.java") ||
+                    name.endsWith("spec.kt") || name.endsWith("spec.java") ||
+                    name.endsWith("it.kt") || name.endsWith("it.java")
+                if (!testNamed && !index.isInTestSourceContent(vf)) return@mapNotNull null
+                PsiManager.getInstance(project).findFile(vf)
+            }.map { pf ->
+                ProgressManager.checkCanceled()
+                val text = pf.text.take(CoverageAIConfig.MAX_TEST_FILE_CHARS)
+                val nameLc = pf.name.lowercase()
+                val hitTestWord =
+                    nameLc.endsWith("test.kt") || nameLc.endsWith("test.java") ||
+                    nameLc.endsWith("tests.kt") || nameLc.endsWith("tests.java") ||
+                    nameLc.endsWith("spec.kt") || nameLc.endsWith("spec.java") || nameLc.endsWith(
+                        "it.kt"
+                    ) || nameLc.endsWith("it.java")
+                val mentionsClass = classNames.any { c -> nameLc.contains(c.lowercase()) || text.contains(c) }
+                val mentionsMethod = methodNames.any { m -> nameLc.contains(m.lowercase()) || text.contains(m) }
+                val importsJunit = text.contains("org.junit") || text.contains("@Test")
+                val score =
+                    (if (hitTestWord || pf.virtualFile?.let(index::isInTestSourceContent) == true) 60 else 0) +
+                        (if (mentionsClass) 40 else 0) +
+                        (if (mentionsMethod) 15 else 0) +
+                        (if (importsJunit) 20 else 0) +
+                        min(text.length, 20_000) / 1000
+                Triple(pf, text, score)
+            }
+            .filter { (pf, text, score) ->
+                score >= 80 && (classNames.any { c -> pf.name.contains(c, ignoreCase = true) || text.contains(c) } ||
+                    methodNames.any { m -> pf.name.contains(m, ignoreCase = true) || text.contains(m) })
+            }
+            .sortedWith(compareByDescending<Triple<PsiFile, String, Int>> { it.third }.thenBy { it.first.name })
+            .map { it.first }
+            .toList()
+
+        return (exactMatches + candidates).distinctBy { it.virtualFile?.path ?: it.name }
+    }
+
+    // ====================== Prompt building ======================
+
+    /**
+     * Build a prompt that includes:
+     *   - Relevant test files at the top if found
+     *   - Then each production method to review
+     *
+     * Global trimming only applies to the combined result (we never trim the method texts).
+     */
+    fun buildPrompt(bundles: List<MethodCoverageBundle>, testFiles: List<TestFileBundle>): String {
+        val header = """
+You are helping a student improve unit tests using IDE coverage results.
+
+Use the current test files, complete production source context, and coverage hotspot metadata together. The production source is authoritative for control flow and expected behavior. The coverage hotspot metadata is the source of truth for what needs coverage-driven recommendations.
+
+Coverage-specific rules:
+- Recommend only conceptual test cases that address missed or partially covered lines/branches shown in the hotspot metadata.
+- If a method has 0 missed lines or 100% coverage, say that no coverage-driven recommendation is needed for that method.
+- Do not propose implementation validation, robustness, invalid-input, or exception tests unless they correspond to missed coverage, an assignment requirement visible in the tests/source, or a clearly observed bug path.
+- Avoid duplicating behavior already covered by the current test file.
+- For private methods, recommend tests through public behavior rather than direct private-method calls.
+- Do not write test code. Provide names and behavior/assertion outlines only.
+- Keep the advice concise and actionable.
+- Write for a novice programmer. Use short, direct sentences and explain the behavior instead of relying on source-line numbers or bowling jargon alone.
+- Make every Action fully specified. Include exact grid dimensions and command sequences for rover cases. Include the exact number of frames, both throw values for every repeated frame type, and all bonus throws for bowling cases.
+- Never use vague setup phrases such as "open frames" unless the pin values for those frames are also stated.
+
+Correctness check to perform internally before returning the response:
+- Trace every proposed action from the public method through the supplied production code.
+- Claim that a missed line is covered only when the proposed setup actually reaches that line, including all preceding conditions and zero-based indexes.
+- Calculate the exact expected observable result from the production code and state it in plain language, such as "The total score is 46" or "The rover returns (0,2,N)."
+- Do not write Java or Kotlin assertion statements, method calls, test bodies, or code snippets in the recommendation.
+- Check that the Covers, Action, and Expected lines agree with one another and do not duplicate another recommendation or an existing test.
+- If the exact expected result or reachability cannot be established from the supplied context, do not recommend that case.
+- Perform this check silently; return only the requested recommendations.
+
+Response format:
+- Return plain text only. Do not use LaTeX, Markdown, HTML, tables, or code fences.
+- Start with the heading "Recommended tests".
+- Use a numbered list. For each recommendation, include a short test name followed by indented "Covers", "Action", and "Expected" lines.
+- Write each "Expected" line as a precise plain-language outcome, never as Java or Kotlin code.
+- Use ordinary words for operators and conditions instead of mathematical notation.
+- End with a short "Already covered" section only when it helps prevent duplicate tests.
+- Do not mention a checklist, rubric, or these instructions. Apply the test-quality requirements directly in the recommendations.
+
+If a test file isn't found, say that no existing tests were found and base recommendations only on coverage/source.
+
+Additionally, if any tests are commented out and target a core functionality that should be tested, treat the functionality as untested and note that it was attempted but is currently commented out.
+
+Test-quality requirements to apply without naming or restating them as a separate checklist:
+- Make every suggested case directly implementable as one executable JUnit test with an @Test annotation.
+- Give every suggested case a descriptive test name and make it evaluate one production method and one observable behavior. When the target is private, exercise that behavior through the appropriate public method rather than calling the private method directly.
+- In every "Expected" line, state the exact value, boolean condition, or exception the student should assert, but describe it in plain language without writing the assertion statement.
+- Keep each case focused. If a case would need more than about five assertions or would verify multiple behaviors, recommend separate cases.
+- When multiple suggested cases repeat setup, include a concise recommendation to extract the shared setup into @BeforeEach. Mention teardown only when the tests acquire resources that need cleanup.
+- Consider every assignment requirement visible in the project context and ensure it has at least one test. Do not duplicate an existing test; use the "Already covered" section when useful.
+- For each visible requirement, consider valid inputs, boundary cases, invalid inputs, and expected exceptions. Recommend the applicable categories when they expose missed coverage, required behavior, or a confirmed or strongly evidenced bug path.
+- For every confirmed or strongly evidenced bug, recommend a fault-revealing test whose stated expected result would fail against the buggy implementation.
+- When uncovered production code represents meaningful behavior, recommend a focused test for it under the coverage-specific rules above.
+
+""".trimIndent()
+
+        val sb = StringBuilder()
+        sb.appendLine(header)
+
+        // Relevant test files, once each.
+        if (testFiles.any { it.testFileText != null }) {
+            sb.appendLine()
+            sb.appendLine("===== Current relevant test files =====")
+            testFiles.filter { it.testFileText != null }.forEachIndexed { index, testFile ->
+                sb.appendLine()
+                sb.appendLine("----- Test file ${index + 1}: ${testFile.testFilePath} -----")
+                sb.appendLine(fence(testFile.testFileText.orEmpty(), testFile.testFilePath))
+            }
+        } else {
+            sb.appendLine()
+            sb.appendLine("===== No relevant test files found in project content =====")
+        }
+
+        val productionSources = bundles.asSequence()
+            .flatMap { it.method.productionSources.asSequence() }
+            .distinctBy { it.sourceFilePath ?: it.classFqn }
+            .take(CoverageAIConfig.MAX_PRODUCTION_FILES_TO_INCLUDE)
+            .toList()
+
+        sb.appendLine()
+        sb.appendLine("===== Complete production source context =====")
+        productionSources.forEachIndexed { index, source ->
+            sb.appendLine()
+            sb.appendLine("----- Production source ${index + 1}: ${source.sourceFilePath ?: source.classFqn} -----")
+            sb.appendLine(fence(source.sourceText, source.sourceFilePath))
+        }
+
+        sb.appendLine()
+        sb.appendLine("===== Coverage hotspots selected for recommendation =====")
+        bundles.forEachIndexed { i, b ->
+            sb.appendLine(
+                "${i + 1}. ${b.hit.classFqn}#${b.hit.method}: " +
+                    "${b.hit.missedLines}/${b.hit.totalLines} missed, " +
+                    "${String.format("%.1f", b.hit.linePct * 100.0)}% covered"
+            )
+            if (b.hit.missedLineNumbers.isNotEmpty()) {
+                sb.appendLine("   Missed lines: ${b.hit.missedLineNumbers.joinToString(", ")}")
+            }
+        }
+
+        bundles.forEachIndexed { i, b ->
+            sb.appendLine()
+            sb.appendLine("=== Method ${i + 1}: ${b.hit.classFqn}#${b.hit.method} ===")
+            sb.appendLine("----- Coverage hotspot metadata -----")
+            sb.appendLine("Missed/Total lines: ${b.hit.missedLines}/${b.hit.totalLines}")
+            sb.appendLine("Line coverage: ${String.format("%.1f", b.hit.linePct * 100.0)}%")
+            if (b.hit.missedLineNumbers.isNotEmpty()) {
+                sb.appendLine("Missed source lines:")
+                sb.appendLine(missedLineDetails(b))
+            } else {
+                sb.appendLine("Missed source lines: not available from the active coverage suite.")
+            }
+            sb.appendLine("----- Production method -----")
+            sb.appendLine(fence(b.method.methodText, b.method.sourceFilePath ?: b.method.classFqn))
+        }
+
+        // Enforce a single global budget: if needed, trim ONLY the test file portion.
+        return enforceGlobalBudget(sb.toString())
+    }
+
+    /** Ask a second model pass to independently verify the draft before display. */
+    fun buildVerificationPrompt(contextPrompt: String, draft: String): String {
+        val header = """
+You are the final accuracy and clarity reviewer for unit-test recommendations written for a novice programmer.
+
+Independently check the draft against the complete production source, existing tests, and coverage metadata below. Do not trust the draft's arithmetic or claimed control flow.
+
+Required review:
+- Trace each Action through the public method and verify that it reaches every line or behavior claimed by Covers.
+- Recalculate every Expected result from scratch. For bowling, separately total the base frame scores and every spare or strike bonus. For command-driven code, simulate every command in order.
+- Make every setup unambiguous. State exact grid sizes and command sequences. For bowling, state how many repeated frames are created and the first and second throw values used in them, plus all bonus throws.
+- Remove a recommendation if its result cannot be determined exactly, it duplicates an existing test, or it does not reach the claimed uncovered behavior.
+- Use wording a novice can follow without having to infer missing values. Describe the behavior before optional source-line references and briefly clarify unfamiliar terms when needed.
+- Preserve the test-quality requirements in the original context: one public method and one behavior per test, an exact outcome to assert, focused assertions, useful shared setup, requirements coverage, and fault-revealing cases for evidenced bugs.
+- Return exactly one valid JSON object and no surrounding prose or code fence. Use this shape:
+  {"recommendations":[{"name":"...","covers":"...","action":"...","expected":"...","targetLines":[1],"reachableLines":[1],"commandSequence":"rrb","movement":"backward","gridWidth":3,"gridHeight":3,"bowlingFrames":[{"firstThrow":1,"secondThrow":1}],"bowlingBonus":null,"expectedNumericTotal":null}],"alreadyCovered":"..."}
+- For Mars Rover, fill commandSequence, movement, gridWidth, and gridHeight; use an empty bowlingFrames array.
+- For bowling, expand bowlingFrames to one object per actual frame, provide bowlingBonus when used, and provide expectedNumericTotal; leave rover-only fields empty or zero.
+- Student-facing name, covers, action, expected, and alreadyCovered values must remain plain-language guidance without Java or Kotlin assertion statements, method calls, test bodies, or code snippets.
+- In alreadyCovered, mention only behavior exercised by existing tests. Do not include setup, refactoring, or advice about the new suggestions.
+
+===== DRAFT RECOMMENDATIONS TO REVIEW =====
+$draft
+
+===== ORIGINAL SOURCE, TEST, AND COVERAGE CONTEXT =====
+""".trimIndent()
+
+        val remaining = (CoverageAIConfig.MAX_PROMPT_CHARS - header.length).coerceAtLeast(0)
+        return header + compactReviewContext(contextPrompt, remaining)
+    }
+
+    fun buildCorrectionPrompt(contextPrompt: String, invalidResponse: String, errors: List<String>): String {
+        val errorText = errors.joinToString("\n") { "- $it" }
+        val header = """
+The structured recommendation review failed deterministic accuracy checks. Correct every listed problem using the original source and tests. Do not preserve an invalid recommendation merely to keep the same number of items.
+
+Validation errors:
+$errorText
+
+Return exactly one corrected JSON object using the same schema as the invalid response, with no surrounding prose or code fence. Ensure titles and Covers use the same forward/backward behavior as commandSequence. Include exact constructor inputs and setup values. Recalculate all expected results before responding.
+
+===== INVALID STRUCTURED RESPONSE =====
+$invalidResponse
+
+===== ORIGINAL SOURCE, TEST, AND COVERAGE CONTEXT =====
+""".trimIndent()
+        val remaining = (CoverageAIConfig.MAX_PROMPT_CHARS - header.length).coerceAtLeast(0)
+        return header + compactReviewContext(contextPrompt, remaining)
+    }
+
+    private fun fence(code: String, hint: String?): String {
+        val lang = when {
+            hint?.endsWith(".kt") == true || hint?.endsWith(".kts") == true -> "kotlin"
+            hint?.endsWith(".java") == true -> "java"
+            else -> ""
+        }
+        return if (lang.isNotEmpty()) "```$lang\n$code\n```" else "```\n$code\n```"
+    }
+
+    /** Keep hotspot methods when large test or production files exceed the request budget. */
+    private fun enforceGlobalBudget(full: String): String {
+        if (full.length <= CoverageAIConfig.MAX_PROMPT_CHARS) return full
+        val withoutExcessTests = trimSection(
+            full, "===== Current relevant test files =====", "===== Complete production source context =====",
+            "\n... [truncated relevant test files]\n"
+        )
+        if (withoutExcessTests.length <= CoverageAIConfig.MAX_PROMPT_CHARS) return withoutExcessTests
+        return trimSection(
+            withoutExcessTests, "===== Complete production source context =====",
+            "===== Coverage hotspots selected for recommendation =====",
+            "\n... [truncated production source; hotspot methods follow]\n"
+        ).take(CoverageAIConfig.MAX_PROMPT_CHARS)
+    }
+
+    private fun trimSection(full: String, startMarker: String, endMarker: String, notice: String): String {
+        if (full.length <= CoverageAIConfig.MAX_PROMPT_CHARS) return full
+        val start = full.indexOf(startMarker)
+        if (start < 0) return full
+        val bodyStart = start + startMarker.length
+        val end = full.indexOf(endMarker, bodyStart)
+        if (end < 0) return full
+        val before = full.substring(0, bodyStart)
+        val after = full.substring(end)
+        val available = (CoverageAIConfig.MAX_PROMPT_CHARS - before.length - after.length - notice.length).coerceAtLeast(0)
+        val body = full.substring(bodyStart, end)
+        return if (body.length <= available) full else before + body.take(available) + notice + after
+    }
+
+    private fun missedLineDetails(bundle: MethodCoverageBundle): String {
+        val startLine = bundle.method.startLine ?: return bundle.hit.missedLineNumbers.joinToString("\n") { "line $it" }
+        val sourceLines = bundle.method.methodText.lines()
+        return bundle.hit.missedLineNumbers.joinToString("\n") { lineNumber ->
+            val offset = lineNumber - startLine
+            if (offset in sourceLines.indices) {
+                "line $lineNumber: ${sourceLines[offset].trim()}"
+            } else {
+                "line $lineNumber"
+            }
+        }
+    }
+
+    private fun compactReviewContext(context: String, maxChars: Int): String {
+        if (context.length <= maxChars) return context
+        if (maxChars <= 80) return context.take(maxChars)
+        val marker = "\n... [middle of original context omitted for review budget] ...\n"
+        val available = (maxChars - marker.length).coerceAtLeast(0)
+        val beginning = available / 2
+        return context.take(beginning) + marker + context.takeLast(available - beginning)
+    }
+
+}

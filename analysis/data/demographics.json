@@ -1,0 +1,152 @@
+[
+  {
+    "measure": "Education",
+    "category": "Graduate",
+    "TC": 1,
+    "AI": 0
+  },
+  {
+    "measure": "Education",
+    "category": "Undergraduate",
+    "TC": 7,
+    "AI": 10
+  },
+  {
+    "measure": "Gender",
+    "category": "Man",
+    "TC": 6,
+    "AI": 5
+  },
+  {
+    "measure": "Gender",
+    "category": "Non-Binary",
+    "TC": 0,
+    "AI": 1
+  },
+  {
+    "measure": "Gender",
+    "category": "Prefer not to disclose",
+    "TC": 1,
+    "AI": 0
+  },
+  {
+    "measure": "Gender",
+    "category": "Woman",
+    "TC": 1,
+    "AI": 4
+  },
+  {
+    "measure": "Programming experience",
+    "category": "1 year- 3 years",
+    "TC": 3,
+    "AI": 6
+  },
+  {
+    "measure": "Programming experience",
+    "category": "Less than 1 year",
+    "TC": 2,
+    "AI": 1
+  },
+  {
+    "measure": "Programming experience",
+    "category": "More than 3 years",
+    "TC": 3,
+    "AI": 3
+  },
+  {
+    "measure": "Java experience",
+    "category": "1 year - 3 years",
+    "TC": 4,
+    "AI": 3
+  },
+  {
+    "measure": "Java experience",
+    "category": "Less than 1 year",
+    "TC": 4,
+    "AI": 4
+  },
+  {
+    "measure": "Java experience",
+    "category": "More than 3 years",
+    "TC": 0,
+    "AI": 3
+  },
+  {
+    "measure": "Unit-testing experience",
+    "category": "Less than 1 year",
+    "TC": 8,
+    "AI": 10
+  },
+  {
+    "measure": "Programming proficiency",
+    "category": "Advanced beginner",
+    "TC": 4,
+    "AI": 3
+  },
+  {
+    "measure": "Programming proficiency",
+    "category": "Competent",
+    "TC": 3,
+    "AI": 4
+  },
+  {
+    "measure": "Programming proficiency",
+    "category": "Novice",
+    "TC": 1,
+    "AI": 1
+  },
+  {
+    "measure": "Programming proficiency",
+    "category": "Proficient",
+    "TC": 0,
+    "AI": 2
+  },
+  {
+    "measure": "Java proficiency",
+    "category": "Advanced beginner",
+    "TC": 3,
+    "AI": 5
+  },
+  {
+    "measure": "Java proficiency",
+    "category": "Competent",
+    "TC": 4,
+    "AI": 2
+  },
+  {
+    "measure": "Java proficiency",
+    "category": "Novice",
+    "TC": 1,
+    "AI": 1
+  },
+  {
+    "measure": "Java proficiency",
+    "category": "Proficient",
+    "TC": 0,
+    "AI": 2
+  },
+  {
+    "measure": "Unit-testing proficiency",
+    "category": "Advanced beginner",
+    "TC": 0,
+    "AI": 2
+  },
+  {
+    "measure": "Unit-testing proficiency",
+    "category": "Competent",
+    "TC": 0,
+    "AI": 1
+  },
+  {
+    "measure": "Unit-testing proficiency",
+    "category": "No experience",
+    "TC": 0,
+    "AI": 1
+  },
+  {
+    "measure": "Unit-testing proficiency",
+    "category": "Novice",
+    "TC": 8,
+    "AI": 6
+  }
+]

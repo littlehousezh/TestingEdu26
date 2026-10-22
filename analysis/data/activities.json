@@ -1,0 +1,578 @@
+[
+  {
+    "participant": "P01",
+    "condition": "AI",
+    "task": 1,
+    "seconds": {
+      "support": 1200,
+      "web": 0,
+      "reference": 0,
+      "requirements": 465,
+      "implementation": 0,
+      "test_work": 0,
+      "junit": 0,
+      "other": 0
+    },
+    "uncertain_seconds": 1276
+  },
+  {
+    "participant": "P01",
+    "condition": "AI",
+    "task": 2,
+    "seconds": {
+      "support": 897,
+      "web": 60,
+      "reference": 0,
+      "requirements": 150,
+      "implementation": 0,
+      "test_work": 0,
+      "junit": 0,
+      "other": 0
+    },
+    "uncertain_seconds": 975
+  },
+  {
+    "participant": "P02",
+    "condition": "TC",
+    "task": 1,
+    "seconds": {
+      "support": 0,
+      "web": 116,
+      "reference": 0,
+      "requirements": 0,
+      "implementation": 0,
+      "test_work": 0,
+      "junit": 0,
+      "other": 0
+    },
+    "uncertain_seconds": 2050
+  },
+  {
+    "participant": "P02",
+    "condition": "TC",
+    "task": 2,
+    "seconds": {
+      "support": 0,
+      "web": 0,
+      "reference": 830,
+      "requirements": 55,
+      "implementation": 0,
+      "test_work": 588,
+      "junit": 0,
+      "other": 30
+    },
+    "uncertain_seconds": 600
+  },
+  {
+    "participant": "P03",
+    "condition": "AI",
+    "task": 1,
+    "seconds": {
+      "support": 1161,
+      "web": 0,
+      "reference": 60,
+      "requirements": 240,
+      "implementation": 0,
+      "test_work": 0,
+      "junit": 0,
+      "other": 90
+    },
+    "uncertain_seconds": 180
+  },
+  {
+    "participant": "P03",
+    "condition": "AI",
+    "task": 2,
+    "seconds": {
+      "support": 552,
+      "web": 0,
+      "reference": 30,
+      "requirements": 75,
+      "implementation": 0,
+      "test_work": 0,
+      "junit": 0,
+      "other": 0
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P04",
+    "condition": "AI",
+    "task": 1,
+    "seconds": {
+      "support": 0,
+      "web": 0,
+      "reference": 0,
+      "requirements": 0,
+      "implementation": 0,
+      "test_work": 0,
+      "junit": 0,
+      "other": 0
+    },
+    "uncertain_seconds": 8
+  },
+  {
+    "participant": "P04",
+    "condition": "AI",
+    "task": 2,
+    "seconds": {
+      "support": 483,
+      "web": 0,
+      "reference": 0,
+      "requirements": 0,
+      "implementation": 0,
+      "test_work": 0,
+      "junit": 0,
+      "other": 0
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P05",
+    "condition": "AI",
+    "task": 1,
+    "seconds": {
+      "support": 0,
+      "web": 0,
+      "reference": 0,
+      "requirements": 0,
+      "implementation": 0,
+      "test_work": 1230,
+      "junit": 700,
+      "other": 0
+    },
+    "uncertain_seconds": 660
+  },
+  {
+    "participant": "P05",
+    "condition": "AI",
+    "task": 2,
+    "seconds": {
+      "support": 1723,
+      "web": 120,
+      "reference": 390,
+      "requirements": 0,
+      "implementation": 0,
+      "test_work": 0,
+      "junit": 0,
+      "other": 360
+    },
+    "uncertain_seconds": 1696
+  },
+  {
+    "participant": "P06",
+    "condition": "AI",
+    "task": 1,
+    "seconds": {
+      "support": 720,
+      "web": 60,
+      "reference": 120,
+      "requirements": 300,
+      "implementation": 390,
+      "test_work": 630,
+      "junit": 90,
+      "other": 75
+    },
+    "uncertain_seconds": 60
+  },
+  {
+    "participant": "P06",
+    "condition": "AI",
+    "task": 2,
+    "seconds": {
+      "support": 1140,
+      "web": 150,
+      "reference": 0,
+      "requirements": 120,
+      "implementation": 210,
+      "test_work": 450,
+      "junit": 90,
+      "other": 162
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P07",
+    "condition": "TC",
+    "task": 1,
+    "seconds": {
+      "support": 705,
+      "web": 0,
+      "reference": 0,
+      "requirements": 0,
+      "implementation": 0,
+      "test_work": 225,
+      "junit": 75,
+      "other": 210
+    },
+    "uncertain_seconds": 331
+  },
+  {
+    "participant": "P07",
+    "condition": "TC",
+    "task": 2,
+    "seconds": {
+      "support": 623,
+      "web": 0,
+      "reference": 0,
+      "requirements": 30,
+      "implementation": 0,
+      "test_work": 240,
+      "junit": 247,
+      "other": 165
+    },
+    "uncertain_seconds": 817
+  },
+  {
+    "participant": "P08",
+    "condition": "TC",
+    "task": 1,
+    "seconds": {
+      "support": 210,
+      "web": 0,
+      "reference": 0,
+      "requirements": 0,
+      "implementation": 0,
+      "test_work": 2137,
+      "junit": 120,
+      "other": 30
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P08",
+    "condition": "TC",
+    "task": 2,
+    "seconds": {
+      "support": 150,
+      "web": 0,
+      "reference": 0,
+      "requirements": 255,
+      "implementation": 300,
+      "test_work": 1620,
+      "junit": 165,
+      "other": 0
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P09",
+    "condition": "TC",
+    "task": 1,
+    "seconds": {
+      "support": 0,
+      "web": 0,
+      "reference": 0,
+      "requirements": 100,
+      "implementation": 90,
+      "test_work": 1980,
+      "junit": 330,
+      "other": 120
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P09",
+    "condition": "TC",
+    "task": 2,
+    "seconds": {
+      "support": 0,
+      "web": 105,
+      "reference": 95,
+      "requirements": 45,
+      "implementation": 120,
+      "test_work": 1650,
+      "junit": 180,
+      "other": 150
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P10",
+    "condition": "AI",
+    "task": 1,
+    "seconds": {
+      "support": 0,
+      "web": 0,
+      "reference": 0,
+      "requirements": 142,
+      "implementation": 113,
+      "test_work": 1372,
+      "junit": 127,
+      "other": 58
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P10",
+    "condition": "AI",
+    "task": 2,
+    "seconds": {
+      "support": 0,
+      "web": 0,
+      "reference": 0,
+      "requirements": 105,
+      "implementation": 105,
+      "test_work": 2605,
+      "junit": 590,
+      "other": 30
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P11",
+    "condition": "AI",
+    "task": 1,
+    "seconds": {
+      "support": 285,
+      "web": 0,
+      "reference": 0,
+      "requirements": 180,
+      "implementation": 240,
+      "test_work": 1401,
+      "junit": 480,
+      "other": 120
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P11",
+    "condition": "AI",
+    "task": 2,
+    "seconds": {
+      "support": 705,
+      "web": 0,
+      "reference": 0,
+      "requirements": 435,
+      "implementation": 30,
+      "test_work": 1560,
+      "junit": 120,
+      "other": 770
+    },
+    "uncertain_seconds": 15
+  },
+  {
+    "participant": "P12",
+    "condition": "AI",
+    "task": 1,
+    "seconds": {
+      "support": 1560,
+      "web": 0,
+      "reference": 0,
+      "requirements": 60,
+      "implementation": 120,
+      "test_work": 420,
+      "junit": 592,
+      "other": 60
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P12",
+    "condition": "AI",
+    "task": 2,
+    "seconds": {
+      "support": 1439,
+      "web": 0,
+      "reference": 0,
+      "requirements": 0,
+      "implementation": 0,
+      "test_work": 0,
+      "junit": 705,
+      "other": 60
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P13",
+    "condition": "AI",
+    "task": 1,
+    "seconds": {
+      "support": 675,
+      "web": 0,
+      "reference": 0,
+      "requirements": 45,
+      "implementation": 105,
+      "test_work": 936,
+      "junit": 0,
+      "other": 0
+    },
+    "uncertain_seconds": 15
+  },
+  {
+    "participant": "P13",
+    "condition": "AI",
+    "task": 2,
+    "seconds": {
+      "support": 270,
+      "web": 0,
+      "reference": 0,
+      "requirements": 60,
+      "implementation": 45,
+      "test_work": 405,
+      "junit": 74,
+      "other": 45
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P14",
+    "condition": "TC",
+    "task": 1,
+    "seconds": {
+      "support": 0,
+      "web": 75,
+      "reference": 150,
+      "requirements": 0,
+      "implementation": 0,
+      "test_work": 1950,
+      "junit": 255,
+      "other": 105
+    },
+    "uncertain_seconds": 163
+  },
+  {
+    "participant": "P14",
+    "condition": "TC",
+    "task": 2,
+    "seconds": {
+      "support": 315,
+      "web": 300,
+      "reference": 15,
+      "requirements": 180,
+      "implementation": 180,
+      "test_work": 2040,
+      "junit": 318,
+      "other": 130
+    },
+    "uncertain_seconds": 165
+  },
+  {
+    "participant": "P15",
+    "condition": "TC",
+    "task": 1,
+    "seconds": {
+      "support": 90,
+      "web": 0,
+      "reference": 0,
+      "requirements": 0,
+      "implementation": 165,
+      "test_work": 2055,
+      "junit": 359,
+      "other": 0
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P15",
+    "condition": "TC",
+    "task": 2,
+    "seconds": {
+      "support": 0,
+      "web": 21,
+      "reference": 0,
+      "requirements": 240,
+      "implementation": 105,
+      "test_work": 1098,
+      "junit": 225,
+      "other": 0
+    },
+    "uncertain_seconds": 1135
+  },
+  {
+    "participant": "P16",
+    "condition": "TC",
+    "task": 1,
+    "seconds": {
+      "support": 90,
+      "web": 0,
+      "reference": 0,
+      "requirements": 0,
+      "implementation": 385,
+      "test_work": 1935,
+      "junit": 135,
+      "other": 0
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P16",
+    "condition": "TC",
+    "task": 2,
+    "seconds": {
+      "support": 105,
+      "web": 0,
+      "reference": 0,
+      "requirements": 0,
+      "implementation": 480,
+      "test_work": 2670,
+      "junit": 240,
+      "other": 0
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P17",
+    "condition": "TC",
+    "task": 1,
+    "seconds": {
+      "support": 0,
+      "web": 0,
+      "reference": 0,
+      "requirements": 0,
+      "implementation": 0,
+      "test_work": 440,
+      "junit": 120,
+      "other": 0
+    },
+    "uncertain_seconds": 115
+  },
+  {
+    "participant": "P17",
+    "condition": "TC",
+    "task": 2,
+    "seconds": {
+      "support": 0,
+      "web": 0,
+      "reference": 0,
+      "requirements": 0,
+      "implementation": 90,
+      "test_work": 3090,
+      "junit": 678,
+      "other": 0
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P18",
+    "condition": "AI",
+    "task": 1,
+    "seconds": {
+      "support": 1707,
+      "web": 0,
+      "reference": 0,
+      "requirements": 183,
+      "implementation": 0,
+      "test_work": 0,
+      "junit": 0,
+      "other": 21
+    },
+    "uncertain_seconds": 0
+  },
+  {
+    "participant": "P18",
+    "condition": "AI",
+    "task": 2,
+    "seconds": {
+      "support": 210,
+      "web": 0,
+      "reference": 0,
+      "requirements": 15,
+      "implementation": 60,
+      "test_work": 315,
+      "junit": 88,
+      "other": 0
+    },
+    "uncertain_seconds": 0
+  }
+]

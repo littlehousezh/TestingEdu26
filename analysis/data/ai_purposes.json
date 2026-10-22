@@ -1,0 +1,102 @@
+[
+  {
+    "participant": "P01",
+    "task": 1,
+    "category": "Checklist/scaffold only"
+  },
+  {
+    "participant": "P01",
+    "task": 2,
+    "category": "Multiple purposes"
+  },
+  {
+    "participant": "P03",
+    "task": 1,
+    "category": "Multiple purposes"
+  },
+  {
+    "participant": "P03",
+    "task": 2,
+    "category": "Multiple purposes"
+  },
+  {
+    "participant": "P04",
+    "task": 1,
+    "category": "No coded AI interaction"
+  },
+  {
+    "participant": "P04",
+    "task": 2,
+    "category": "Generation-focused only"
+  },
+  {
+    "participant": "P05",
+    "task": 1,
+    "category": "No coded AI interaction"
+  },
+  {
+    "participant": "P05",
+    "task": 2,
+    "category": "Multiple purposes"
+  },
+  {
+    "participant": "P06",
+    "task": 1,
+    "category": "Multiple purposes"
+  },
+  {
+    "participant": "P06",
+    "task": 2,
+    "category": "Multiple purposes"
+  },
+  {
+    "participant": "P10",
+    "task": 1,
+    "category": "No coded AI interaction"
+  },
+  {
+    "participant": "P10",
+    "task": 2,
+    "category": "No coded AI interaction"
+  },
+  {
+    "participant": "P11",
+    "task": 1,
+    "category": "Multiple purposes"
+  },
+  {
+    "participant": "P11",
+    "task": 2,
+    "category": "Multiple purposes"
+  },
+  {
+    "participant": "P12",
+    "task": 1,
+    "category": "Multiple purposes"
+  },
+  {
+    "participant": "P12",
+    "task": 2,
+    "category": "Multiple purposes"
+  },
+  {
+    "participant": "P13",
+    "task": 1,
+    "category": "Multiple purposes"
+  },
+  {
+    "participant": "P13",
+    "task": 2,
+    "category": "Multiple purposes"
+  },
+  {
+    "participant": "P18",
+    "task": 1,
+    "category": "Multiple purposes"
+  },
+  {
+    "participant": "P18",
+    "task": 2,
+    "category": "Multiple purposes"
+  }
+]

@@ -1,0 +1,182 @@
+package org.testcompass.plugin
+
+import com.intellij.ide.highlighter.XmlFileType
+import com.intellij.openapi.components.service
+import com.intellij.psi.xml.XmlFile
+import com.intellij.testFramework.TestDataPath
+import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.util.PsiErrorElementUtil
+import org.testcompass.plugin.services.MyProjectService
+import org.testcompass.plugin.coverage.AmplifyChatClient
+import org.testcompass.plugin.coverage.CodeExtraction
+import org.testcompass.plugin.actions.MethodHit
+import org.testcompass.plugin.startup.CoverageCalculatedListener
+import org.testcompass.plugin.startup.CoverageRunTracker
+import com.intellij.coverage.CoverageSuite
+import com.intellij.coverage.CoverageSuitesBundle
+import java.lang.reflect.Proxy
+import java.util.concurrent.atomic.AtomicLong
+
+@TestDataPath("\$CONTENT_ROOT/src/test/testData")
+class MyPluginTest : BasePlatformTestCase() {
+
+    fun testXMLFile() {
+        val psiFile = myFixture.configureByText(XmlFileType.INSTANCE, "<foo>bar</foo>")
+        val xmlFile = assertInstanceOf(psiFile, XmlFile::class.java)
+
+        assertFalse(PsiErrorElementUtil.hasErrors(project, xmlFile.virtualFile))
+
+        assertNotNull(xmlFile.rootTag)
+
+        xmlFile.rootTag?.let {
+            assertEquals("foo", it.name)
+            assertEquals("bar", it.value.text)
+        }
+    }
+
+    fun testRename() {
+        myFixture.testRename("foo.xml", "foo_after.xml", "a2")
+    }
+
+    fun testProjectService() {
+        val projectService = project.service<MyProjectService>()
+
+        assertNotSame(projectService.getRandomNumber(), projectService.getRandomNumber())
+    }
+
+    fun testAmplifyUsesPreferredModelOnlyWhenAvailable() {
+        val response = """
+            {"data":{"models":[{"id":"gpt-5.2"},{"id":"account-default"}],"default":{"id":"account-default"}}}
+        """.trimIndent()
+
+        assertEquals("gpt-5.2", AmplifyChatClient.selectAvailableModel(response, "gpt-5.2"))
+        assertEquals("account-default", AmplifyChatClient.selectAvailableModel(response, "gpt-5"))
+    }
+
+    fun testAmplifyFallsBackToFirstAvailableModelWithoutDefault() {
+        val response = """
+            {"data":{"models":[{"id":"first-model"},{"id":"second-model"}]}}
+        """.trimIndent()
+
+        assertEquals("first-model", AmplifyChatClient.selectAvailableModel(response, ""))
+    }
+
+    fun testAmplifyExtractsCurrentChatResponse() {
+        assertEquals(
+            "Recommendation text",
+            AmplifyChatClient.extractContentSmart(
+                """{"success":true,"message":"ok","data":"Recommendation text"}"""
+            )
+        )
+    }
+
+    fun testCoverageRunTrackerAcceptsEachNewCoverageResultOnce() {
+        val tracker = CoverageRunTracker()
+        val firstBundle = Any()
+        val secondBundle = Any()
+
+        assertTrue(tracker.claim(firstBundle, 100L))
+        assertFalse(tracker.claim(firstBundle, 100L))
+        assertTrue(tracker.claim(firstBundle, 101L))
+        assertTrue(tracker.claim(secondBundle, 101L))
+    }
+
+    fun testCalculatedCoverageAutomaticallyStartsOneAnalysisPerResult() {
+        val timestamp = AtomicLong(100L)
+        val bundle = coverageBundle(timestamp)
+        var analysisCount = 0
+        var analyzedBundle: CoverageSuitesBundle? = null
+        val listener = CoverageCalculatedListener(project) { _, calculatedBundle ->
+            analysisCount++
+            analyzedBundle = calculatedBundle
+        }
+
+        listener.coverageDataCalculated(bundle)
+        listener.coverageDataCalculated(bundle)
+        assertEquals(1, analysisCount)
+        assertSame(bundle, analyzedBundle)
+
+        timestamp.incrementAndGet()
+        listener.coverageDataCalculated(bundle)
+        assertEquals(2, analysisCount)
+    }
+
+    fun testRecommendationContextIncludesEnclosingAndReferencedProductionClasses() {
+        myFixture.addFileToProject(
+            "src/Frame.java",
+            "public class Frame { public int getScore() { return 0; } }"
+        )
+        myFixture.addFileToProject(
+            "src/BowlingGame.java",
+            """
+                public class BowlingGame {
+                    private Frame bonus;
+                    private int calculateStrikeBonus(int index) {
+                        return bonus == null ? 0 : bonus.getScore();
+                    }
+                }
+            """.trimIndent()
+        )
+        val hit = MethodHit(
+            classFqn = "BowlingGame",
+            method = "calculateStrikeBonus(I)I",
+            totalLines = 2,
+            coveredLines = 1,
+            missedLines = 1,
+            linePct = 0.5
+        )
+
+        val bundles = CodeExtraction.resolveTopBundles(project, listOf(hit))
+        assertSize(1, bundles)
+        val sourceNames = bundles.single().method.productionSources.map { it.sourceFilePath?.substringAfterLast('/') }
+        assertContainsElements(sourceNames, "BowlingGame.java", "Frame.java")
+    }
+
+    fun testRelevantTestFilesExcludeUnrelatedAndProductionFiles() {
+        myFixture.addFileToProject("src/MarsRover.java", "public class MarsRover { public void move() {} }")
+        myFixture.addFileToProject("test/MarsRoverTest.java", "class MarsRoverTest { void checkMove() { MarsRover rover; } }")
+        myFixture.addFileToProject("test/UnrelatedTest.java", "class UnrelatedTest { @Test void check() {} }")
+        myFixture.addFileToProject("src/Helper.java", "// @Test MarsRover move\nclass Helper {}")
+        val hit = MethodHit("MarsRover", "move()V", 1, 0, 1, 0.0)
+
+        val bundles = CodeExtraction.resolveTopBundles(project, listOf(hit))
+        val found = CodeExtraction.resolveRelevantTestFiles(project, bundles)
+
+        assertSize(1, found)
+        assertEquals("MarsRoverTest.java", found.single().testFilePath?.substringAfterLast('/'))
+    }
+
+    fun testConstructorCoverageSignatureResolvesToConstructorSource() {
+        myFixture.addFileToProject("src/MarsRover.java", "public class MarsRover { public MarsRover(int width) {} }")
+        val hit = MethodHit("MarsRover", "<init>(I)V", 1, 0, 1, 0.0)
+
+        val bundles = CodeExtraction.resolveTopBundles(project, listOf(hit))
+
+        assertSize(1, bundles)
+        assertEquals("<init>", bundles.single().method.methodName)
+        assertTrue(bundles.single().method.methodText.contains("MarsRover(int width)"))
+    }
+
+    private fun coverageBundle(timestamp: AtomicLong): CoverageSuitesBundle {
+        val suite = Proxy.newProxyInstance(
+            CoverageSuite::class.java.classLoader,
+            arrayOf(CoverageSuite::class.java)
+        ) { proxy, method, args ->
+            when (method.name) {
+                "getLastCoverageTimeStamp" -> timestamp.get()
+                "getCoverageEngine", "getProject", "getRunner", "getCoverageDataFileProvider", "getCoverageData" -> null
+                "getCoverageDataFileName", "getPresentableName" -> "test-coverage"
+                "isValid" -> true
+                "isTrackTestFolders", "isBranchCoverage", "isCoverageByTestEnabled" -> false
+                "hashCode" -> System.identityHashCode(proxy)
+                "equals" -> proxy === args?.firstOrNull()
+                "toString" -> "TestCoverageSuite"
+                else -> null
+            }
+        } as CoverageSuite
+
+        return CoverageSuitesBundle(suite)
+    }
+
+    override fun getTestDataPath() = "src/test/testData/rename"
+}

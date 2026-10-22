@@ -1,0 +1,290 @@
+[
+  {
+    "participant": "P01",
+    "condition": "AI",
+    "knowledge_pre": 2,
+    "knowledge_post": 2,
+    "confidence_pre": 1,
+    "confidence_post": 1,
+    "helpfulness": 5,
+    "recommend": 5,
+    "reported_use": {
+      "what_to_test_next": true,
+      "when_to_stop": false,
+      "before_submission": true,
+      "frequent_consultation": false
+    }
+  },
+  {
+    "participant": "P02",
+    "condition": "TC",
+    "knowledge_pre": 3,
+    "knowledge_post": 2,
+    "confidence_pre": 3,
+    "confidence_post": 3,
+    "helpfulness": 3,
+    "recommend": 4,
+    "reported_use": {
+      "what_to_test_next": true,
+      "when_to_stop": true,
+      "before_submission": true,
+      "frequent_consultation": false
+    }
+  },
+  {
+    "participant": "P03",
+    "condition": "AI",
+    "knowledge_pre": 3,
+    "knowledge_post": 3,
+    "confidence_pre": 3,
+    "confidence_post": 3,
+    "helpfulness": 5,
+    "recommend": 1,
+    "reported_use": {
+      "what_to_test_next": true,
+      "when_to_stop": true,
+      "before_submission": true,
+      "frequent_consultation": true
+    }
+  },
+  {
+    "participant": "P04",
+    "condition": "AI",
+    "knowledge_pre": 5,
+    "knowledge_post": 3,
+    "confidence_pre": 4,
+    "confidence_post": 4,
+    "helpfulness": 5,
+    "recommend": 5,
+    "reported_use": {
+      "what_to_test_next": false,
+      "when_to_stop": false,
+      "before_submission": false,
+      "frequent_consultation": true
+    }
+  },
+  {
+    "participant": "P05",
+    "condition": "AI",
+    "knowledge_pre": 3,
+    "knowledge_post": 2,
+    "confidence_pre": 2,
+    "confidence_post": 2,
+    "helpfulness": 4,
+    "recommend": 1,
+    "reported_use": {
+      "what_to_test_next": true,
+      "when_to_stop": false,
+      "before_submission": false,
+      "frequent_consultation": true
+    }
+  },
+  {
+    "participant": "P06",
+    "condition": "AI",
+    "knowledge_pre": 3,
+    "knowledge_post": 3,
+    "confidence_pre": 3,
+    "confidence_post": 3,
+    "helpfulness": 4,
+    "recommend": 2,
+    "reported_use": {
+      "what_to_test_next": false,
+      "when_to_stop": false,
+      "before_submission": false,
+      "frequent_consultation": true
+    }
+  },
+  {
+    "participant": "P07",
+    "condition": "TC",
+    "knowledge_pre": 3,
+    "knowledge_post": 2,
+    "confidence_pre": 3,
+    "confidence_post": 2,
+    "helpfulness": 3,
+    "recommend": 3,
+    "reported_use": {
+      "what_to_test_next": true,
+      "when_to_stop": false,
+      "before_submission": false,
+      "frequent_consultation": false
+    }
+  },
+  {
+    "participant": "P08",
+    "condition": "TC",
+    "knowledge_pre": 3,
+    "knowledge_post": 2,
+    "confidence_pre": 3,
+    "confidence_post": 4,
+    "helpfulness": 3,
+    "recommend": 3,
+    "reported_use": {
+      "what_to_test_next": false,
+      "when_to_stop": false,
+      "before_submission": true,
+      "frequent_consultation": false
+    }
+  },
+  {
+    "participant": "P09",
+    "condition": "TC",
+    "knowledge_pre": 3,
+    "knowledge_post": 3,
+    "confidence_pre": 3,
+    "confidence_post": 3,
+    "helpfulness": 2,
+    "recommend": 2,
+    "reported_use": {
+      "what_to_test_next": false,
+      "when_to_stop": false,
+      "before_submission": true,
+      "frequent_consultation": false
+    }
+  },
+  {
+    "participant": "P10",
+    "condition": "AI",
+    "knowledge_pre": 3,
+    "knowledge_post": 4,
+    "confidence_pre": 3,
+    "confidence_post": 4,
+    "helpfulness": 5,
+    "recommend": 3,
+    "reported_use": {
+      "what_to_test_next": false,
+      "when_to_stop": false,
+      "before_submission": true,
+      "frequent_consultation": false
+    }
+  },
+  {
+    "participant": "P11",
+    "condition": "AI",
+    "knowledge_pre": 3,
+    "knowledge_post": 2,
+    "confidence_pre": 3,
+    "confidence_post": 3,
+    "helpfulness": 5,
+    "recommend": 4,
+    "reported_use": {
+      "what_to_test_next": true,
+      "when_to_stop": false,
+      "before_submission": false,
+      "frequent_consultation": true
+    }
+  },
+  {
+    "participant": "P12",
+    "condition": "AI",
+    "knowledge_pre": 3,
+    "knowledge_post": 3,
+    "confidence_pre": 3,
+    "confidence_post": 3,
+    "helpfulness": 4,
+    "recommend": 5,
+    "reported_use": {
+      "what_to_test_next": true,
+      "when_to_stop": false,
+      "before_submission": true,
+      "frequent_consultation": true
+    }
+  },
+  {
+    "participant": "P13",
+    "condition": "AI",
+    "knowledge_pre": 3,
+    "knowledge_post": 3,
+    "confidence_pre": 4,
+    "confidence_post": 4,
+    "helpfulness": 5,
+    "recommend": 5,
+    "reported_use": {
+      "what_to_test_next": true,
+      "when_to_stop": false,
+      "before_submission": true,
+      "frequent_consultation": true
+    }
+  },
+  {
+    "participant": "P14",
+    "condition": "TC",
+    "knowledge_pre": 3,
+    "knowledge_post": 3,
+    "confidence_pre": 3,
+    "confidence_post": 2,
+    "helpfulness": 4,
+    "recommend": 4,
+    "reported_use": {
+      "what_to_test_next": true,
+      "when_to_stop": true,
+      "before_submission": false,
+      "frequent_consultation": false
+    }
+  },
+  {
+    "participant": "P15",
+    "condition": "TC",
+    "knowledge_pre": 3,
+    "knowledge_post": 3,
+    "confidence_pre": 3,
+    "confidence_post": 2,
+    "helpfulness": 2,
+    "recommend": 2,
+    "reported_use": {
+      "what_to_test_next": true,
+      "when_to_stop": true,
+      "before_submission": true,
+      "frequent_consultation": false
+    }
+  },
+  {
+    "participant": "P16",
+    "condition": "TC",
+    "knowledge_pre": 3,
+    "knowledge_post": 2,
+    "confidence_pre": 3,
+    "confidence_post": 3,
+    "helpfulness": 4,
+    "recommend": 4,
+    "reported_use": {
+      "what_to_test_next": true,
+      "when_to_stop": true,
+      "before_submission": true,
+      "frequent_consultation": true
+    }
+  },
+  {
+    "participant": "P17",
+    "condition": "TC",
+    "knowledge_pre": 3,
+    "knowledge_post": 3,
+    "confidence_pre": 3,
+    "confidence_post": 4,
+    "helpfulness": 5,
+    "recommend": 5,
+    "reported_use": {
+      "what_to_test_next": true,
+      "when_to_stop": true,
+      "before_submission": true,
+      "frequent_consultation": true
+    }
+  },
+  {
+    "participant": "P18",
+    "condition": "AI",
+    "knowledge_pre": 2,
+    "knowledge_post": 2,
+    "confidence_pre": 3,
+    "confidence_post": 2,
+    "helpfulness": 5,
+    "recommend": 5,
+    "reported_use": {
+      "what_to_test_next": true,
+      "when_to_stop": true,
+      "before_submission": true,
+      "frequent_consultation": true
+    }
+  }
+]
