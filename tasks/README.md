@@ -6,6 +6,13 @@ Names, institutional references, contact details, account identifiers, survey an
 
 The instructions below preserve the task order, time limits, recording requirements, and testing workflow used in the study.
 
+## Survey materials
+
+- `Pre-Survey.pdf` contains the pre-task consent, knowledge, and confidence questions.
+- `post_survey.pdf` contains the post-task background, experience, reflection, and tool-use questions.
+
+Both surveys are blank, deidentified archival copies. Their email and institutional-ID question has been replaced with a neutral participant-ID question. Course identifiers, form destinations, clickable links, browser print headers and footers, and PDF metadata have been removed. The PDFs have been reformatted; the remaining questions, answer options, rating scales, required-question markers, and printed skip instructions are retained.
+
 ## Extra credit instructions
 
  This homework consists of two tasks: (1) MarsRover and (2) BowlingScoreKeeper.
