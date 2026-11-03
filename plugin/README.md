@@ -9,9 +9,9 @@ Build and run tests with JDK 21: `./gradlew test buildPlugin`.
 The installable archive is written to `build/distributions/`.
 Use `./gradlew runIde` to launch a development IDE.
 
-Configure `AMPLIFY_BASE` with your own Amplify-compatible API service URL.
+Configure `TOKEN_BASE` with your own API service URL.
 Provide a bearer token through the plugin settings or `AMPLIFY_BEARER`.
-An optional `AMPLIFY_MODEL_ID` selects a model; otherwise the service default is used.
+An optional `MODEL_ID` selects a model; otherwise the service default is used.
 Environment variables or an untracked `plugin.env` in the working directory are supported.
 No service endpoint or credentials are bundled. This protocol is not a generic OpenAI API client.
 
